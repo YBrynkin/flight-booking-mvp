@@ -1,5 +1,9 @@
 package ru.brynkin;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import ru.brynkin.config.DatabaseConfig;
 import ru.brynkin.config.FlywayConfig;
 import ru.brynkin.util.ConnectionManager;
@@ -17,6 +21,9 @@ public class Main {
       // Test connection
       ConnectionManager.testConnection();
 
+      // Test some quires
+      testSampleQueries();
+
       // Application startup
       System.out.println("Application started successfully");
 
@@ -26,6 +33,24 @@ public class Main {
       System.exit(1);
     } finally {
       DatabaseConfig.closeDataSource();
+    }
+  }
+
+  private static void testSampleQueries() throws SQLException {
+    try (Connection conn = ConnectionManager.getConnection()) {
+      // Test airlines count
+      try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM airlines");
+           ResultSet rs = ps.executeQuery()) {
+        rs.next();
+        System.out.println("Airlines in database: " + rs.getInt(1));
+      }
+
+      // Test flights count
+      try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM flights");
+           ResultSet rs = ps.executeQuery()) {
+        rs.next();
+        System.out.println("Flights in database: " + rs.getInt(1));
+      }
     }
   }
 }

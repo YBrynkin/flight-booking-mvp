@@ -78,7 +78,7 @@
                         <location>${flyway.locations}</location>
                     </locations>
                     <baselineOnMigrate>true</baselineOnMigrate>
-                    <cleanDisabled>true</cleanDisabled> <!-- Enable clean for dev -->
+                    <cleanDisabled>false</cleanDisabled> <!-- Enable clean for dev -->
                     <outOfOrder>true</outOfOrder> <!-- Flexible for team dev -->
                     <validateOnMigrate>true</validateOnMigrate>
                     <loggers>
