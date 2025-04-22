@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: flight_booking_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: flight_booking
+      POSTGRES_USER: flight_booking_admin
+      POSTGRES_PASSWORD: rules
+      POSTGRES_HOST_AUTH_METHOD: trust  # For local development only
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./src/main/resources/db/migration/:/docker-entrypoint-initdb.d/
+      - flight_booking_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U flight_booking_admin -d flight_booking" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - flight_network
+
+volumes:
+  flight_booking_pg_data:
+
+networks:
+  flight_network:
+    name: flight_booking_network

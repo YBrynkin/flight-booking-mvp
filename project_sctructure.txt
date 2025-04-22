@@ -1,0 +1,36 @@
+src/
+├── main/
+│   ├── java/
+│   │   └── ru/brynkin/flightbooking/
+│   │       ├── config/                # Configuration classes
+│   │       │   └── DatabaseConfig.java
+│   │       ├── dao/                   # Data Access Layer
+│   │       │   ├── impl/              # JDBC implementations
+│   │       │   │   ├── UserDaoImpl.java
+│   │       │   │   └── FlightDaoImpl.java
+│   │       │   └── interfaces/        # Interfaces
+│   │       │       ├── UserDao.java
+│   │       │       └── FlightDao.java
+│   │       ├── dto/                   # Data Transfer Objects
+│   │       │   ├── UserDto.java
+│   │       │   └── FlightDto.java
+│   │       ├── model/                 # Entity classes
+│   │       │   ├── User.java
+│   │       │   └── Flight.java
+│   │       ├── service/               # Business Logic
+│   │       │   ├── UserService.java
+│   │       │   └── FlightService.java
+│   │       ├── util/                  # Utilities
+│   │       │   ├── ConnectionManager.java
+│   │       │   └── PasswordHasher.java
+│   │       └── Main.java              # Entry point (temporary)
+│   ├── resources/
+│   │   ├── db/
+│   │   │   └── migration/             # Flyway scripts
+│   │   └── application.properties      # DB credentials
+│   └── webapp/                        # (Future servlets/JSP)
+└── test/                              # Test classes
+    └── java/
+        └── ru/brynkin/flightbooking/
+            ├── dao/
+            └── service/
