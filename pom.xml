@@ -13,6 +13,15 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.version>21</jdk.version>
+
+        <!-- Dependency versions -->
+        <lombok.version>1.18.30</lombok.version>
+        <postgresql.version>42.7.2</postgresql.version>
+        <hikari.version>5.1.0</hikari.version>
+        <flyway.version>9.22.3</flyway.version>
+        <slf4j.version>2.0.12</slf4j.version>
+        <logback.version>1.5.13</logback.version>
+
         <!-- Flyway Properties -->
         <flyway.url>jdbc:postgresql://localhost:5433/flight_booking</flyway.url>
         <flyway.user>flight_booking_admin</flyway.user>
@@ -25,38 +34,70 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
+            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
+
         <!-- PostgreSQL JDBC -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.2</version>
+            <version>${postgresql.version}</version>
         </dependency>
+
         <!-- Hikari Connection Pool -->
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
-            <version>5.1.0</version> <!-- Latest stable version as of now -->
+            <version>${hikari.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <!-- FLYWAYDB migration tool -->
+
+        <!-- Flyway -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
-            <version>9.22.3</version>
+            <version>${flyway.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        <!-- Log tool -->
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.3</version>
+            <version>${logback.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jcl-over-slf4j</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Easy run with mvn compile exec:java -->
+            <!-- Exec plugin for running main class -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -65,11 +106,12 @@
                     <mainClass>ru.brynkin.flightbooking.Main</mainClass>
                 </configuration>
             </plugin>
-            <!-- Flyway Plugin with Debug-Friendly Config -->
+
+            <!-- Flyway Plugin -->
             <plugin>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
-                <version>9.22.3</version>
+                <version>${flyway.version}</version>
                 <configuration>
                     <url>${flyway.url}</url>
                     <user>${flyway.user}</user>
@@ -78,22 +120,19 @@
                         <location>${flyway.locations}</location>
                     </locations>
                     <baselineOnMigrate>true</baselineOnMigrate>
-                    <cleanDisabled>false</cleanDisabled> <!-- Enable clean for dev -->
-                    <outOfOrder>true</outOfOrder> <!-- Flexible for team dev -->
+                    <cleanDisabled>false</cleanDisabled>
+                    <outOfOrder>true</outOfOrder>
                     <validateOnMigrate>true</validateOnMigrate>
-                    <loggers>
-                        <logger>console</logger>
-                    </loggers>
                 </configuration>
                 <dependencies>
-                    <!-- Ensure plugin uses same PostgreSQL driver -->
                     <dependency>
                         <groupId>org.postgresql</groupId>
                         <artifactId>postgresql</artifactId>
-                        <version>42.7.2</version>
+                        <version>${postgresql.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
+
             <!-- CheckStyle -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -101,7 +140,7 @@
                 <version>3.3.0</version>
                 <configuration>
                     <configLocation>google_checks.xml</configLocation>
-                    <failOnViolation>false</failOnViolation> <!-- Disable for now -->
+                    <failOnViolation>false</failOnViolation>
                 </configuration>
                 <executions>
                     <execution>

@@ -4,8 +4,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import ru.brynkin.config.DatabaseConfig;
 import ru.brynkin.config.FlywayConfig;
+import ru.brynkin.dao.impl.AirportDaoImpl;
+import ru.brynkin.entity.Airport;
 import ru.brynkin.util.ConnectionManager;
 
 /**
@@ -19,13 +22,15 @@ public class Main {
       FlywayConfig.migrate();
 
       // Test connection
-      ConnectionManager.testConnection();
+      //ConnectionManager.testConnection();
 
-      // Test some quires
-      testSampleQueries();
-
-      // Application startup
-      System.out.println("Application started successfully");
+      // Test DAO realization
+      AirportDaoImpl airportDaoImpl = AirportDaoImpl.getInstance();
+      List<Airport> airports = airportDaoImpl.findAll();
+      for (Airport airport : airports) {
+        System.out.println(airport);
+      }
+      System.out.println("DAO completed successfully");
 
     } catch (Exception e) {
       System.err.println("Application startup failed");
