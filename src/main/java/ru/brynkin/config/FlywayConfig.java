@@ -1,27 +1,27 @@
 package ru.brynkin.config;
 
+import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
-import ru.brynkin.util.ExeptionHandler;
 
 /**
  * Flyway configuration class
  */
 
 public class FlywayConfig {
-  public static void migrate() {
-    try {
-      Flyway flyway = Flyway.configure()
-          .dataSource(DatabaseConfig.getDataSource())
-          .locations("classpath:db/migration")
-          .baselineOnMigrate(true)
-          .load();
+  private final DataSource dataSource;
 
-      flyway.migrate();
-      System.out.println("Flyway migration complete successfully!");
-    } catch (Exception e) {
-      ExeptionHandler.handleException("Flyway migration failed!", e);
-      throw new RuntimeException("Flyway migration test failed", e);
-    }
+  public FlywayConfig(DataSource dataSource) {
+    this.dataSource = dataSource;
+  }
 
+  public Flyway flyway() {
+    return Flyway.configure()
+        .dataSource(dataSource)
+        .locations("classpath:db/migration")
+        .baselineOnMigrate(true)
+        .validateOnMigrate(true)
+        .cleanDisabled(false)  // Enable clean for dev (disable in prod)
+        .outOfOrder(true)      // Allow out-of-order migrations
+        .load();
   }
 }

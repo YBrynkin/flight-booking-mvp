@@ -2,6 +2,7 @@ package ru.brynkin.config;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import javax.sql.DataSource;
 
 /**
  * Hikari Connection pool configuration class
@@ -40,7 +41,7 @@ public class DatabaseConfig {
 
   }
 
-  public static HikariDataSource getDataSource() {
+  public static DataSource getDataSource() {
     return dataSource;
   }
 

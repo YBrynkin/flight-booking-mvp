@@ -172,7 +172,7 @@ public class AirportDaoImpl implements AirportsDao {
 
       try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
         if (generatedKeys.next()) {
-          airport.setAirportId(generatedKeys.getInt(1));
+          airport.setAirportId(generatedKeys.getInt("airport_id"));
         }
         return airport;
       }
