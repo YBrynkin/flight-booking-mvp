@@ -1,36 +1,92 @@
-src/
-├── main/
-│   ├── java/
-│   │   └── ru/brynkin/flightbooking/
-│   │       ├── config/                # Configuration classes
-│   │       │   └── DatabaseConfig.java
-│   │       ├── dao/                   # Data Access Layer
-│   │       │   ├── impl/              # JDBC implementations
-│   │       │   │   ├── UserDaoImpl.java
-│   │       │   │   └── FlightDaoImpl.java
-│   │       │   └── interfaces/        # Interfaces
-│   │       │       ├── UserDao.java
-│   │       │       └── FlightDao.java
-│   │       ├── dto/                   # Data Transfer Objects
-│   │       │   ├── UserDto.java
-│   │       │   └── FlightDto.java
-│   │       ├── model/                 # Entity classes
-│   │       │   ├── User.java
-│   │       │   └── Flight.java
-│   │       ├── service/               # Business Logic
-│   │       │   ├── UserService.java
-│   │       │   └── FlightService.java
-│   │       ├── util/                  # Utilities
-│   │       │   ├── ConnectionManager.java
-│   │       │   └── PasswordHasher.java
-│   │       └── Main.java              # Entry point (temporary)
-│   ├── resources/
-│   │   ├── db/
-│   │   │   └── migration/             # Flyway scripts
-│   │   └── application.properties      # DB credentials
-│   └── webapp/                        # (Future servlets/JSP)
-└── test/                              # Test classes
-    └── java/
-        └── ru/brynkin/flightbooking/
-            ├── dao/
-            └── service/
+flight-booking-system/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── ru/
+│   │   │       └── brynkin/
+│   │   │           └── flightbooking/
+│   │   │               ├── config/
+│   │   │               │   ├── DatabaseConfig.java
+│   │   │               │   └── WebConfig.java
+│   │   │               ├── dao/
+│   │   │               │   ├── impl/
+│   │   │               │   │   ├── FlightDaoImpl.java
+│   │   │               │   │   ├── AirlineDaoImpl.java
+│   │   │               │   │   ├── AirportDaoImpl.java
+│   │   │               │   │   └── BookingDaoImpl.java
+│   │   │               │   ├── FlightDao.java
+│   │   │               │   ├── AirlineDao.java
+│   │   │               │   ├── AirportDao.java
+│   │   │               │   └── BookingDao.java
+│   │   │               ├── dto/
+│   │   │               │   ├── request/
+│   │   │               │   │   ├── FlightSearchRequest.java
+│   │   │               │   │   └── BookingRequest.java
+│   │   │               │   └── response/
+│   │   │               │       ├── FlightResponse.java
+│   │   │               │       └── BookingResponse.java
+│   │   │               ├── entity/
+│   │   │               │   ├── Flight.java
+│   │   │               │   ├── Airline.java
+│   │   │               │   ├── Airport.java
+│   │   │               │   ├── Booking.java
+│   │   │               │   └── User.java
+│   │   │               ├── enums/
+│   │   │               │   ├── FlightStatus.java
+│   │   │               │   ├── BookingStatus.java
+│   │   │               │   └── PaymentStatus.java
+│   │   │               ├── exception/
+│   │   │               │   ├── DataAccessException.java
+│   │   │               │   ├── NotFoundException.java
+│   │   │               │   └── ValidationException.java
+│   │   │               ├── filter/
+│   │   │               │   └── AuthenticationFilter.java
+│   │   │               ├── service/
+│   │   │               │   ├── impl/
+│   │   │               │   │   ├── FlightServiceImpl.java
+│   │   │               │   │   └── BookingServiceImpl.java
+│   │   │               │   ├── FlightService.java
+│   │   │               │   └── BookingService.java
+│   │   │               ├── servlet/
+│   │   │               │   ├── FlightServlet.java
+│   │   │               │   ├── BookingServlet.java
+│   │   │               │   └── UserServlet.java
+│   │   │               ├── util/
+│   │   │               │   ├── ConnectionManager.java
+│   │   │               │   ├── DtoConverter.java
+│   │   │               │   └── DateTimeUtil.java
+│   │   │               └── Application.java
+│   │   ├── resources/
+│   │   │   ├── db/
+│   │   │   │   └── migration/
+│   │   │   │       ├── V1__Initial_schema.sql
+│   │   │   │       └── V2__Add_indexes.sql
+│   │   │   ├── application.properties
+│   │   │   └── logback.xml
+│   │   └── webapp/
+│   │       ├── WEB-INF/
+│   │       │   ├── web.xml
+│   │       │   └── views/
+│   │       │       ├── flight/
+│   │       │       │   ├── list.jsp
+│   │       │       │   └── details.jsp
+│   │       │       └── booking/
+│   │       │           ├── create.jsp
+│   │       │           └── confirm.jsp
+│   │       ├── static/
+│   │       │   ├── css/
+│   │       │   └── js/
+│   │       └── index.jsp
+│   └── test/
+│       ├── java/
+│       │   └── ru/
+│       │       └── brynkin/
+│       │           └── flightbooking/
+│       │               ├── dao/
+│       │               │   └── FlightDaoImplTest.java
+│       │               └── service/
+│       │                   └── FlightServiceImplTest.java
+│       └── resources/
+│           └── test.properties
+├── pom.xml
+└── docker-compose.yml

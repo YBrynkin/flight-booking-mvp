@@ -1,8 +1,8 @@
-package ru.brynkin.util;
+package ru.brynkin.flightbooking.util;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import ru.brynkin.config.DatabaseConfig;
+import ru.brynkin.flightbooking.config.DatabaseConfig;
 
 /**
  * Connection manager class for out flight booking system project

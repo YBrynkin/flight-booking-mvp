@@ -1,4 +1,4 @@
-package ru.brynkin.config;
+package ru.brynkin.flightbooking.config;
 
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;

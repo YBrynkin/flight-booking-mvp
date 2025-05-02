@@ -1,4 +1,4 @@
-package ru.brynkin.entity;
+package ru.brynkin.flightbooking.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +20,7 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class Airport {
 
-  private int airportId;
+  private Integer airportId;
   private String name;
   private String city;
   private String country;

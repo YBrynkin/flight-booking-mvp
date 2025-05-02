@@ -1,4 +1,4 @@
-package ru.brynkin.util;
+package ru.brynkin.flightbooking.util;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.output.MigrateResult;

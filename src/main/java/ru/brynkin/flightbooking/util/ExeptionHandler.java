@@ -1,4 +1,4 @@
-package ru.brynkin.util;
+package ru.brynkin.flightbooking.util;
 
 /**
  * Exeption handler utility class

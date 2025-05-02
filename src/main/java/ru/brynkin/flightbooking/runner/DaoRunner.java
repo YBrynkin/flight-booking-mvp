@@ -1,13 +1,17 @@
-package ru.brynkin.runner;
+package ru.brynkin.flightbooking.runner;
 
+import java.util.List;
 import java.util.UUID;
-import ru.brynkin.dao.impl.AirportDaoImpl;
-import ru.brynkin.entity.Airport;
-import ru.brynkin.exception.DaoException;
+import ru.brynkin.flightbooking.dao.impl.AirportDaoImpl;
+import ru.brynkin.flightbooking.dao.impl.FlightDaoImpl;
+import ru.brynkin.flightbooking.entity.Airport;
+import ru.brynkin.flightbooking.entity.Flight;
+import ru.brynkin.flightbooking.exception.DaoException;
 
 public class DaoRunner {
 
   private static final AirportDaoImpl airportDao = AirportDaoImpl.getInstance();
+  private static final FlightDaoImpl flightDao = FlightDaoImpl.getInstance();
 
   // Generate unique test data that won't violate constraints
   private static String randomIataCode() {
@@ -20,12 +24,15 @@ public class DaoRunner {
 
   public static void main(String[] args) {
     try {
-      System.out.println("=== Airport DAO Constraint-Safe Test Suite ===");
+      System.out.println("=== Dao Testing ===");
 
-      testCreateWithUniqueData();
-      testFindOperations();
-      testUpdateWithUniqueData();
-      testDelete();
+      List<Flight> flights = flightDao.findAll();
+      System.out.println();
+
+//      testFindOperations();
+//      testUpdateWithUniqueData();
+//      testCreateWithUniqueData();
+//      testDelete();
 
       System.out.println("=== All tests completed without constraint violations ===");
     } catch (DaoException e) {

@@ -1,8 +1,8 @@
-package ru.brynkin.dao;
+package ru.brynkin.flightbooking.dao;
 
 import java.util.List;
 import java.util.Optional;
-import ru.brynkin.exception.DaoException;
+import ru.brynkin.flightbooking.exception.DaoException;
 
 /**
  * Generic DAO interface for CRUD operations

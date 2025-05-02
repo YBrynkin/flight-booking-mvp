@@ -1,36 +1,29 @@
-package ru.brynkin.entity;
+package ru.brynkin.flightbooking.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import ru.brynkin.flightbooking.enums.FlightStatus;
 
 /**
  * Entity class for flights table
  */
-@Setter
-@Getter
+
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@EqualsAndHashCode
-@ToString
 public class Flight {
-
   private Integer flightId;
   private String flightNumber;
-  private Integer airlineId;
-  private Integer departureAirportId;
-  private Integer arrivalAirportId;
+  private Airline airline;
+  private Airport departureAirport;
+  private Airport arrivalAirport;
   private LocalDateTime departureTime;
   private LocalDateTime arrivalTime;
-  private BigDecimal price;
-  private Integer statusId;
-
-
+  private BigDecimal basePrice;
+  private FlightStatus status;
 }

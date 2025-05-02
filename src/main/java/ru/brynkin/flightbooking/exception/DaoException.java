@@ -1,4 +1,4 @@
-package ru.brynkin.exception;
+package ru.brynkin.flightbooking.exception;
 
 /**
  * Custom exception class for Data Access Object (DAO) layer exceptions.

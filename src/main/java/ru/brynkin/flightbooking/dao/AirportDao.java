@@ -1,15 +1,15 @@
-package ru.brynkin.dao;
+package ru.brynkin.flightbooking.dao;
 
 import java.util.List;
 import java.util.Optional;
-import ru.brynkin.entity.Airport;
-import ru.brynkin.exception.DaoException;
+import ru.brynkin.flightbooking.entity.Airport;
+import ru.brynkin.flightbooking.exception.DaoException;
 
 /**
  * Intraface for Airport's DAO class
  */
 
-public interface AirportsDao extends BaseDao<Integer, Airport> {
+public interface AirportDao extends BaseDao<Integer, Airport> {
 
   List<Airport> findByCountry(String country) throws DaoException;
 

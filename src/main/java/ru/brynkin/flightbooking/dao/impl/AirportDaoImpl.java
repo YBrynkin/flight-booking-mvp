@@ -1,4 +1,4 @@
-package ru.brynkin.dao.impl;
+package ru.brynkin.flightbooking.dao.impl;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -8,15 +8,15 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import ru.brynkin.dao.AirportsDao;
-import ru.brynkin.entity.Airport;
-import ru.brynkin.exception.DaoException;
-import ru.brynkin.util.ConnectionManager;
+import ru.brynkin.flightbooking.dao.AirportDao;
+import ru.brynkin.flightbooking.entity.Airport;
+import ru.brynkin.flightbooking.exception.DaoException;
+import ru.brynkin.flightbooking.util.ConnectionManager;
 
-public class AirportDaoImpl implements AirportsDao {
+public class AirportDaoImpl implements AirportDao {
 
   // SQL Queries with explicit column names
-  private static final String SELECT_ALL_AIRPORTS_SQL = """
+  private static final String SELECT_ALL_SQL = """
       SELECT 
           airport_id, 
           name, 
@@ -27,7 +27,7 @@ public class AirportDaoImpl implements AirportsDao {
           timezone 
       FROM airports""";
 
-  private static final String SELECT_AIRPORT_BY_ID_SQL = """
+  private static final String SELECT_BY_ID_SQL = """
       SELECT 
           airport_id, 
           name, 
@@ -87,7 +87,7 @@ public class AirportDaoImpl implements AirportsDao {
       FROM airports 
       WHERE icao_code = ?""";
 
-  private static final String INSERT_TO_TABLE_SQL = """
+  private static final String INSERT_SQL = """
       INSERT INTO airports (
           name, 
           city, 
@@ -97,7 +97,7 @@ public class AirportDaoImpl implements AirportsDao {
           timezone
       ) VALUES (?, ?, ?, ?, ?, ?)""";
 
-  private static final String UPDATE_AIRPORT_SQL = """
+  private static final String UPDATE_SQL = """
       UPDATE airports SET
           name = ?,
           city = ?,
@@ -111,8 +111,8 @@ public class AirportDaoImpl implements AirportsDao {
       DELETE FROM airports
       WHERE airport_id = ?""";
 
-  // Singleton pattern with proper synchronization
-  private static volatile AirportDaoImpl instance;
+  // Singleton pattern
+  private static AirportDaoImpl instance;
 
   private AirportDaoImpl() {
     // Private constructor to prevent instantiation
@@ -120,11 +120,7 @@ public class AirportDaoImpl implements AirportsDao {
 
   public static AirportDaoImpl getInstance() {
     if (instance == null) {
-      synchronized (AirportDaoImpl.class) {
-        if (instance == null) {
-          instance = new AirportDaoImpl();
-        }
-      }
+      instance = new AirportDaoImpl();
     }
     return instance;
   }
@@ -132,7 +128,7 @@ public class AirportDaoImpl implements AirportsDao {
   @Override
   public Optional<Airport> findById(Integer id) throws DaoException {
     try (Connection connection = ConnectionManager.getConnection();
-         PreparedStatement stmt = connection.prepareStatement(SELECT_AIRPORT_BY_ID_SQL)) {
+         PreparedStatement stmt = connection.prepareStatement(SELECT_BY_ID_SQL)) {
 
       stmt.setInt(1, id);
 
@@ -148,7 +144,7 @@ public class AirportDaoImpl implements AirportsDao {
   public List<Airport> findAll() throws DaoException {
     try (Connection connection = ConnectionManager.getConnection();
          Statement stmt = connection.createStatement();
-         ResultSet rs = stmt.executeQuery(SELECT_ALL_AIRPORTS_SQL)) {
+         ResultSet rs = stmt.executeQuery(SELECT_ALL_SQL)) {
 
       List<Airport> airports = new ArrayList<>();
       while (rs.next()) {
@@ -164,7 +160,7 @@ public class AirportDaoImpl implements AirportsDao {
   public Airport create(Airport airport) throws DaoException {
     try (Connection connection = ConnectionManager.getConnection();
          PreparedStatement stmt = connection.prepareStatement(
-             INSERT_TO_TABLE_SQL,
+             INSERT_SQL,
              Statement.RETURN_GENERATED_KEYS)) {
 
       setAirportParameters(stmt, airport);
@@ -184,7 +180,7 @@ public class AirportDaoImpl implements AirportsDao {
   @Override
   public Airport update(Airport airport) throws DaoException {
     try (Connection connection = ConnectionManager.getConnection();
-         PreparedStatement stmt = connection.prepareStatement(UPDATE_AIRPORT_SQL)) {
+         PreparedStatement stmt = connection.prepareStatement(UPDATE_SQL)) {
 
       setAirportParameters(stmt, airport);
       stmt.setInt(7, airport.getAirportId());
@@ -298,5 +294,8 @@ public class AirportDaoImpl implements AirportsDao {
     } catch (SQLException e) {
       throw new DaoException("Failed to set airport parameters", e);
     }
+
   }
 }
+
+
