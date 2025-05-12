@@ -11,7 +11,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
 import ru.brynkin.flightbooking.dao.FlightDao;
 import ru.brynkin.flightbooking.entity.Airline;
 import ru.brynkin.flightbooking.entity.Airport;
@@ -20,80 +19,98 @@ import ru.brynkin.flightbooking.enums.FlightStatus;
 import ru.brynkin.flightbooking.exception.DaoException;
 import ru.brynkin.flightbooking.util.ConnectionManager;
 
-@Slf4j
+/**
+ * JDBC implementation of the {@link FlightDao} interface that provides CRUD operations
+ * for {@link Flight} entities in a PostgreSQL database.
+ *
+ * <p>This implementation uses prepared statements to prevent SQL injection,
+ * manages database connections through {@link ConnectionManager}, and follows
+ * the singleton pattern to ensure a single instance throughout the application.</p>
+ *
+ * <p>It is also worth pointing out that in the implementation of the class for performing select
+ * queries, it was decided to use the view for simplified mapping of the Flight entity.</p>
+ *
+ * @see FlightDao
+ * @see Flight
+ * @see DaoException
+ */
+
+
 public class FlightDaoImpl implements FlightDao {
 
-  private static final String SELECT_ALL_SQL = """
-      SELECT 
-          f.flight_id, f.flight_number, f.departure_time, f.arrival_time,
-          f.base_price, f.status_id,
-          al.airline_id, al.name as airline_name, al.iata_code as airline_iata, 
-          al.icao_code as airline_icao, al.country as airline_country, al.is_active as airline_active,
-          dep.airport_id as dep_id, dep.name as dep_name, dep.city as dep_city, 
-          dep.country as dep_country, dep.iata_code as dep_iata, dep.icao_code as dep_icao, dep.timezone as dep_tz,
-          arr.airport_id as arr_id, arr.name as arr_name, arr.city as arr_city, 
-          arr.country as arr_country, arr.iata_code as arr_iata, arr.icao_code as arr_icao, arr.timezone as arr_tz
-      FROM flights f
-      JOIN airlines al ON f.airline_id = al.airline_id
-      JOIN airports dep ON f.departure_airport_id = dep.airport_id
-      JOIN airports arr ON f.arrival_airport_id = arr.airport_id
-      ORDER BY f.departure_time ASC""";
+  /**
+   * The queries assume the use of a view @flight_complete_view for simplified mapping of
+   * the Flight entity.
+   */
 
-  private static final String SELECT_BY_ID_SQL = """
-      SELECT 
-          f.flight_id, f.flight_number, f.departure_time, f.arrival_time,
-          f.base_price, f.status_id,
-          al.airline_id, al.name as airline_name, al.iata_code as airline_iata, 
-          al.icao_code as airline_icao, al.country as airline_country, al.is_active as airline_active,
-          dep.airport_id as dep_id, dep.name as dep_name, dep.city as dep_city, 
-          dep.country as dep_country, dep.iata_code as dep_iata, dep.icao_code as dep_icao, dep.timezone as dep_tz,
-          arr.airport_id as arr_id, arr.name as arr_name, arr.city as arr_city, 
-          arr.country as arr_country, arr.iata_code as arr_iata, arr.icao_code as arr_icao, arr.timezone as arr_tz
-      FROM flights f
-      JOIN airlines al ON f.airline_id = al.airline_id
-      JOIN airports dep ON f.departure_airport_id = dep.airport_id
-      JOIN airports arr ON f.arrival_airport_id = arr.airport_id
-      WHERE f.flight_id = ?""";
+  // View-based queries.
+  private static final String FLIGHT_VIEW_BASE_QUERY = String.format("""
+          SELECT 
+              %s, %s, 
+              %s, %s, 
+              %s, %s, 
+              %s, %s,
+              %s, %s,
+              %s, %s, 
+              %s, %s, 
+              %s,
+              %s, %s,
+              %s, %s,
+              %s, %s,
+              %s,
+              %s, %s,
+              %s, %s, 
+              %s
+          FROM flight_complete_view""",
+      FlightViewColumns.FLIGHT_ID, FlightViewColumns.FLIGHT_NUMBER,
+      FlightViewColumns.AIRLINE_ID, FlightViewColumns.AIRLINE_NAME,
+      FlightViewColumns.AIRLINE_IATA, FlightViewColumns.AIRLINE_ICAO,
+      FlightViewColumns.AIRLINE_COUNTRY, FlightViewColumns.AIRLINE_ACTIVE,
+      FlightViewColumns.ARRIVAL_AIRPORT_ID, FlightViewColumns.ARRIVAL_AIRPORT_NAME,
+      FlightViewColumns.ARRIVAL_CITY, FlightViewColumns.ARRIVAL_COUNTRY,
+      FlightViewColumns.ARRIVAL_IATA, FlightViewColumns.ARRIVAL_ICAO,
+      FlightViewColumns.ARRIVAL_TIMEZONE,
+      FlightViewColumns.DEPARTURE_AIRPORT_ID, FlightViewColumns.DEPARTURE_AIRPORT_NAME,
+      FlightViewColumns.DEPARTURE_CITY, FlightViewColumns.DEPARTURE_COUNTRY,
+      FlightViewColumns.DEPARTURE_IATA, FlightViewColumns.DEPARTURE_ICAO,
+      FlightViewColumns.DEPARTURE_TIMEZONE,
+      FlightViewColumns.STATUS_ID, FlightViewColumns.STATUS_NAME,
+      FlightViewColumns.DEPARTURE_TIME, FlightViewColumns.ARRIVAL_TIME,
+      FlightViewColumns.BASE_PRICE);
 
-  private static final String SELECT_BY_CRITERIA_SQL = """
-      SELECT 
-          f.flight_id, f.flight_number, f.departure_time, f.arrival_time,
-          f.base_price, f.status_id,
-          al.airline_id, al.name as airline_name, al.iata_code as airline_iata, 
-          al.icao_code as airline_icao, al.country as airline_country, al.is_active as airline_active,
-          dep.airport_id as dep_id, dep.name as dep_name, dep.city as dep_city, 
-          dep.country as dep_country, dep.iata_code as dep_iata, dep.icao_code as dep_icao, dep.timezone as dep_tz,
-          arr.airport_id as arr_id, arr.name as arr_name, arr.city as arr_city, 
-          arr.country as arr_country, arr.iata_code as arr_iata, arr.icao_code as arr_icao, arr.timezone as arr_tz
-      FROM flights f
-      JOIN airlines al ON f.airline_id = al.airline_id
-      JOIN airports dep ON f.departure_airport_id = dep.airport_id
-      JOIN airports arr ON f.arrival_airport_id = arr.airport_id
-      WHERE 1=1""";
+  private static final String SELECT_ALL_SQL =
+      FLIGHT_VIEW_BASE_QUERY + " ORDER BY departure_time ASC";
+  private static final String SELECT_BY_ID_SQL = FLIGHT_VIEW_BASE_QUERY + " WHERE flight_id = ?";
+  private static final String SELECT_BY_CRITERIA_SQL = FLIGHT_VIEW_BASE_QUERY + " WHERE 1=1";
 
-  private static final String INSERT_SQL = """
-      INSERT INTO flights (
-          flight_number, airline_id, departure_airport_id, arrival_airport_id,
-          departure_time, arrival_time, base_price, status_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
+  // Table-based queries for writes
+  private static final String INSERT_SQL = String.format("""
+          INSERT INTO flights (
+              %s, %s, %s, %s, %s, %s, %s, %s
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+      FlightColumns.FLIGHT_NUMBER, FlightColumns.AIRLINE_ID,
+      FlightColumns.DEPARTURE_AIRPORT_ID, FlightColumns.ARRIVAL_AIRPORT_ID,
+      FlightColumns.DEPARTURE_TIME, FlightColumns.ARRIVAL_TIME,
+      FlightColumns.BASE_PRICE, FlightColumns.STATUS_ID);
 
-  private static final String UPDATE_SQL = """
-      UPDATE flights SET
-          flight_number = ?,
-          airline_id = ?,
-          departure_airport_id = ?,
-          arrival_airport_id = ?,
-          departure_time = ?,
-          arrival_time = ?,
-          base_price = ?,
-          status_id = ?
-      WHERE flight_id = ?""";
+  private static final String UPDATE_SQL = String.format("""
+          UPDATE flights SET
+              %s = ?, %s = ?, %s = ?, %s = ?, %s = ?, %s = ?, %s = ?, %s = ?
+          WHERE %s = ?""",
+      FlightColumns.FLIGHT_NUMBER, FlightColumns.AIRLINE_ID,
+      FlightColumns.DEPARTURE_AIRPORT_ID, FlightColumns.ARRIVAL_AIRPORT_ID,
+      FlightColumns.DEPARTURE_TIME, FlightColumns.ARRIVAL_TIME,
+      FlightColumns.BASE_PRICE, FlightColumns.STATUS_ID,
+      FlightColumns.FLIGHT_ID);
 
-  private static final String UPDATE_STATUS_SQL = """
-      UPDATE flights SET status_id = ? 
-      WHERE flight_id = ?""";
+  private static final String DELETE_SQL =
+      String.format("DELETE FROM flights WHERE %s = ?", FlightColumns.FLIGHT_ID);
 
-  private static final String DELETE_SQL = "DELETE FROM flights WHERE flight_id = ?";
+  private static final String UPDATE_STATUS_SQL = String.format("""
+          UPDATE flights SET 
+          %S = ? 
+          WHERE %S = ?"""
+      , FlightColumns.STATUS_ID, FlightColumns.FLIGHT_ID);
 
   // Singleton pattern
   private static volatile FlightDaoImpl instance;
@@ -155,26 +172,26 @@ public class FlightDaoImpl implements FlightDao {
     List<Object> parameters = new ArrayList<>();
 
     if (departureAirportId != null) {
-      sqlBuilder.append(" AND f.departure_airport_id = ?");
+      sqlBuilder.append(" AND departure_airport_id = ?");
       parameters.add(departureAirportId);
     }
 
     if (arrivalAirportId != null) {
-      sqlBuilder.append(" AND f.arrival_airport_id = ?");
+      sqlBuilder.append(" AND arrival_airport_id = ?");
       parameters.add(arrivalAirportId);
     }
 
     if (date != null) {
-      sqlBuilder.append(" AND DATE(f.departure_time) = ?");
+      sqlBuilder.append(" AND DATE(departure_time) = ?");
       parameters.add(Date.valueOf(date));
     }
 
     if (status != null) {
-      sqlBuilder.append(" AND f.status_id = ?");
+      sqlBuilder.append(" AND status_id = ?");
       parameters.add(status.ordinal());
     }
 
-    sqlBuilder.append(" ORDER BY f.departure_time ASC");
+    sqlBuilder.append(" ORDER BY departure_time ASC");
 
     try (Connection conn = ConnectionManager.getConnection();
          PreparedStatement stmt = conn.prepareStatement(sqlBuilder.toString())) {
@@ -242,7 +259,7 @@ public class FlightDaoImpl implements FlightDao {
   }
 
   @Override
-  public boolean updateStatus(Long flightId, FlightStatus newStatus) throws DaoException {
+  public boolean updateStatus(Integer flightId, FlightStatus newStatus) throws DaoException {
     if (flightId == null || flightId <= 0) {
       throw new IllegalArgumentException("Flight ID must be positive");
     }
@@ -254,11 +271,11 @@ public class FlightDaoImpl implements FlightDao {
          PreparedStatement stmt = conn.prepareStatement(UPDATE_STATUS_SQL)) {
 
       stmt.setInt(1, newStatus.ordinal());
-      stmt.setLong(2, flightId);
+      stmt.setInt(2, flightId);
 
       return stmt.executeUpdate() > 0;
     } catch (SQLException e) {
-      throw new DaoException("Failed to update flight status", e);
+      throw new DaoException("Failed to update flight status for ID: " + flightId, e);
     }
   }
 
@@ -280,50 +297,51 @@ public class FlightDaoImpl implements FlightDao {
 
   private Flight mapToFlight(ResultSet rs) throws SQLException {
     return Flight.builder()
-        .flightId(rs.getInt("flight_id"))
-        .flightNumber(rs.getString("flight_number"))
+        .flightId(rs.getInt(FlightColumns.FLIGHT_ID))
+        .flightNumber(rs.getString(FlightColumns.FLIGHT_NUMBER))
         .airline(mapToAirline(rs))
         .departureAirport(mapToDepartureAirport(rs))
         .arrivalAirport(mapToArrivalAirport(rs))
-        .departureTime(rs.getTimestamp("departure_time").toLocalDateTime())
-        .arrivalTime(rs.getTimestamp("arrival_time").toLocalDateTime())
-        .basePrice(rs.getBigDecimal("base_price"))
-        .status(FlightStatus.values()[rs.getInt("status_id")])
+        .departureTime(rs.getTimestamp(FlightColumns.DEPARTURE_TIME).toLocalDateTime())
+        .arrivalTime(rs.getTimestamp(FlightColumns.ARRIVAL_TIME).toLocalDateTime())
+        .basePrice(rs.getBigDecimal(FlightColumns.BASE_PRICE))
+        .status(FlightStatus.values()[rs.getInt(FlightColumns.STATUS_ID)])
         .build();
   }
 
   private Airline mapToAirline(ResultSet rs) throws SQLException {
     return Airline.builder()
-        .airlineId(rs.getInt("airline_id"))
-        .name(rs.getString("airline_name"))
-        .iataCode(rs.getString("airline_iata"))
-        .icaoCode(rs.getString("airline_icao"))
-        .country(rs.getString("airline_country"))
-        .active(rs.getBoolean("airline_active"))
+        .airlineId(rs.getInt(FlightViewColumns.AIRLINE_ID))
+        .name(rs.getString(FlightViewColumns.AIRLINE_NAME))
+        .iataCode(rs.getString(FlightViewColumns.AIRLINE_IATA))
+        .icaoCode(rs.getString(FlightViewColumns.AIRLINE_ICAO))
+        .country(rs.getString(FlightViewColumns.AIRLINE_COUNTRY))
+        .active(rs.getBoolean(FlightViewColumns.AIRLINE_ACTIVE))
         .build();
   }
 
+
   private Airport mapToDepartureAirport(ResultSet rs) throws SQLException {
     return Airport.builder()
-        .airportId(rs.getInt("dep_id"))
-        .name(rs.getString("dep_name"))
-        .city(rs.getString("dep_city"))
-        .country(rs.getString("dep_country"))
-        .iataCode(rs.getString("dep_iata"))
-        .icaoCode(rs.getString("dep_icao"))
-        .timezone(rs.getString("dep_tz"))
+        .airportId(rs.getInt(FlightViewColumns.DEPARTURE_AIRPORT_ID))
+        .name(rs.getString(FlightViewColumns.DEPARTURE_AIRPORT_NAME))
+        .city(rs.getString(FlightViewColumns.DEPARTURE_CITY))
+        .country(rs.getString(FlightViewColumns.DEPARTURE_COUNTRY))
+        .iataCode(rs.getString(FlightViewColumns.DEPARTURE_IATA))
+        .icaoCode(rs.getString(FlightViewColumns.DEPARTURE_ICAO))
+        .timezone(rs.getString(FlightViewColumns.DEPARTURE_TIMEZONE))
         .build();
   }
 
   private Airport mapToArrivalAirport(ResultSet rs) throws SQLException {
     return Airport.builder()
-        .airportId(rs.getInt("arr_id"))
-        .name(rs.getString("arr_name"))
-        .city(rs.getString("arr_city"))
-        .country(rs.getString("arr_country"))
-        .iataCode(rs.getString("arr_iata"))
-        .icaoCode(rs.getString("arr_icao"))
-        .timezone(rs.getString("arr_tz"))
+        .airportId(rs.getInt(FlightViewColumns.ARRIVAL_AIRPORT_ID))
+        .name(rs.getString(FlightViewColumns.ARRIVAL_AIRPORT_NAME))
+        .city(rs.getString(FlightViewColumns.ARRIVAL_CITY))
+        .country(rs.getString(FlightViewColumns.ARRIVAL_COUNTRY))
+        .iataCode(rs.getString(FlightViewColumns.ARRIVAL_IATA))
+        .icaoCode(rs.getString(FlightViewColumns.ARRIVAL_ICAO))
+        .timezone(rs.getString(FlightViewColumns.ARRIVAL_TIMEZONE))
         .build();
   }
 
@@ -356,4 +374,59 @@ public class FlightDaoImpl implements FlightDao {
       throw new IllegalArgumentException("Arrival airport is required");
     }
   }
+
+  private static final class FlightColumns {
+    // Flight table columns
+    public static final String FLIGHT_ID = "flight_id";
+    public static final String FLIGHT_NUMBER = "flight_number";
+    public static final String AIRLINE_ID = "airline_id";
+    public static final String DEPARTURE_AIRPORT_ID = "departure_airport_id";
+    public static final String ARRIVAL_AIRPORT_ID = "arrival_airport_id";
+    public static final String DEPARTURE_TIME = "departure_time";
+    public static final String ARRIVAL_TIME = "arrival_time";
+    public static final String BASE_PRICE = "base_price";
+    public static final String STATUS_ID = "status_id";
+  }
+
+  private static final class FlightViewColumns {
+    // Flight table columns
+    public static final String FLIGHT_ID = "flight_id";
+    public static final String FLIGHT_NUMBER = "flight_number";
+    public static final String AIRLINE_ID = "airline_id";
+    public static final String DEPARTURE_AIRPORT_ID = "departure_airport_id";
+    public static final String ARRIVAL_AIRPORT_ID = "arrival_airport_id";
+    public static final String DEPARTURE_TIME = "departure_time";
+    public static final String ARRIVAL_TIME = "arrival_time";
+    public static final String BASE_PRICE = "base_price";
+    public static final String STATUS_ID = "status_id";
+
+    // Airline table columns
+    public static final String AIRLINE_NAME = "airline_name";
+    public static final String AIRLINE_IATA = "airline_iata";
+    public static final String AIRLINE_ICAO = "airline_icao";
+    public static final String AIRLINE_COUNTRY = "airline_country";
+    public static final String AIRLINE_ACTIVE = "airline_active";
+
+    // Status columns
+    public static final String STATUS_NAME = "status_name";
+
+    // Columns for departure airports
+    private static final String DEPARTURE_PREFIX = "departure_";
+    public static final String DEPARTURE_AIRPORT_NAME = DEPARTURE_PREFIX + "airport_name";
+    public static final String DEPARTURE_CITY = DEPARTURE_PREFIX + "city";
+    public static final String DEPARTURE_COUNTRY = DEPARTURE_PREFIX + "country";
+    public static final String DEPARTURE_IATA = DEPARTURE_PREFIX + "iata";
+    public static final String DEPARTURE_ICAO = DEPARTURE_PREFIX + "icao";
+    public static final String DEPARTURE_TIMEZONE = DEPARTURE_PREFIX + "timezone";
+
+    // Columns for arrival airport
+    private static final String ARRIVAL_PREFIX = "arrival_";
+    public static final String ARRIVAL_AIRPORT_NAME = ARRIVAL_PREFIX + "airport_name";
+    public static final String ARRIVAL_CITY = ARRIVAL_PREFIX + "city";
+    public static final String ARRIVAL_COUNTRY = ARRIVAL_PREFIX + "country";
+    public static final String ARRIVAL_IATA = ARRIVAL_PREFIX + "iata";
+    public static final String ARRIVAL_ICAO = ARRIVAL_PREFIX + "icao";
+    public static final String ARRIVAL_TIMEZONE = ARRIVAL_PREFIX + "timezone";
+  }
+
 }

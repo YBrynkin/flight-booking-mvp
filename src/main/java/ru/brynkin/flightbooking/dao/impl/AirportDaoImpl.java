@@ -13,111 +13,70 @@ import ru.brynkin.flightbooking.entity.Airport;
 import ru.brynkin.flightbooking.exception.DaoException;
 import ru.brynkin.flightbooking.util.ConnectionManager;
 
+/**
+ * JDBC implementation of the {@link AirportDao} interface that provides CRUD operations
+ * for {@link Airport} entities in a PostgreSQL database.
+ *
+ * <p>This implementation uses prepared statements to prevent SQL injection,
+ * manages database connections through {@link ConnectionManager}, and follows
+ * the singleton pattern to ensure a single instance throughout the application.</p>
+ *
+ * @see AirportDao
+ * @see Airport
+ * @see DaoException
+ */
+
 public class AirportDaoImpl implements AirportDao {
 
-  // SQL Queries with explicit column names
-  private static final String SELECT_ALL_SQL = """
-      SELECT 
-          airport_id, 
-          name, 
-          city, 
-          country, 
-          iata_code, 
-          icao_code, 
-          timezone 
-      FROM airports""";
+  // SQL Query templates
+  private static final String BASE_SELECT = """
+      SELECT %s, %s, %s, %s, %s, %s, %s 
+      FROM airports""".formatted(
+      Columns.AIRPORT_ID, Columns.NAME, Columns.CITY,
+      Columns.COUNTRY, Columns.IATA_CODE, Columns.ICAO_CODE, Columns.TIMEZONE);
 
-  private static final String SELECT_BY_ID_SQL = """
-      SELECT 
-          airport_id, 
-          name, 
-          city, 
-          country, 
-          iata_code, 
-          icao_code, 
-          timezone 
-      FROM airports 
-      WHERE airport_id = ?""";
+  private static final String SELECT_ALL_SQL = BASE_SELECT;
 
-  private static final String SELECT_BY_COUNTRY_SQL = """
-      SELECT 
-          airport_id, 
-          name, 
-          city, 
-          country, 
-          iata_code, 
-          icao_code, 
-          timezone 
-      FROM airports 
-      WHERE country = ?""";
+  private static final String SELECT_BY_ID_SQL =
+      BASE_SELECT + " WHERE " + Columns.AIRPORT_ID + " = ?";
 
-  private static final String SELECT_BY_CITY_SQL = """
-      SELECT 
-          airport_id, 
-          name, 
-          city, 
-          country, 
-          iata_code, 
-          icao_code, 
-          timezone 
-      FROM airports 
-      WHERE city = ?""";
+  private static final String SELECT_BY_COUNTRY_SQL =
+      BASE_SELECT + " WHERE " + Columns.COUNTRY + " = ?";
 
-  private static final String SELECT_BY_IATA_CODE_SQL = """
-      SELECT 
-          airport_id, 
-          name, 
-          city, 
-          country, 
-          iata_code, 
-          icao_code, 
-          timezone 
-      FROM airports 
-      WHERE iata_code = ?""";
+  private static final String SELECT_BY_CITY_SQL = BASE_SELECT + " WHERE " + Columns.CITY + " = ?";
 
-  private static final String SELECT_BY_ICAO_CODE_SQL = """
-      SELECT 
-          airport_id, 
-          name, 
-          city, 
-          country, 
-          iata_code, 
-          icao_code, 
-          timezone 
-      FROM airports 
-      WHERE icao_code = ?""";
+  private static final String SELECT_BY_IATA_CODE_SQL =
+      BASE_SELECT + " WHERE " + Columns.IATA_CODE + " = ?";
+
+  private static final String SELECT_BY_ICAO_CODE_SQL =
+      BASE_SELECT + " WHERE " + Columns.ICAO_CODE + " = ?";
 
   private static final String INSERT_SQL = """
-      INSERT INTO airports (
-          name, 
-          city, 
-          country, 
-          iata_code, 
-          icao_code, 
-          timezone
-      ) VALUES (?, ?, ?, ?, ?, ?)""";
+      INSERT INTO airports (%s, %s, %s, %s, %s, %s) 
+      VALUES (?, ?, ?, ?, ?, ?)""".formatted(
+      Columns.NAME, Columns.CITY, Columns.COUNTRY,
+      Columns.IATA_CODE, Columns.ICAO_CODE, Columns.TIMEZONE);
 
   private static final String UPDATE_SQL = """
-      UPDATE airports SET
-          name = ?,
-          city = ?,
-          country = ?,
-          iata_code = ?,
-          icao_code = ?,
-          timezone = ?
-      WHERE airport_id = ?""";
+      UPDATE airports 
+      SET %s = ?, %s = ?, %s = ?, %s = ?, %s = ?, %s = ? 
+      WHERE %s = ?""".formatted(
+      Columns.NAME, Columns.CITY, Columns.COUNTRY,
+      Columns.IATA_CODE, Columns.ICAO_CODE, Columns.TIMEZONE,
+      Columns.AIRPORT_ID);
 
-  private static final String DELETE_AIRPORT_BY_ID_SQL = """
-      DELETE FROM airports
-      WHERE airport_id = ?""";
+  private static final String DELETE_SQL =
+      "DELETE FROM airports WHERE " + Columns.AIRPORT_ID + " = ?";
 
   // Singleton pattern
   private static AirportDaoImpl instance;
+
 
   private AirportDaoImpl() {
     // Private constructor to prevent instantiation
   }
 
+  // Get-method
   public static AirportDaoImpl getInstance() {
     if (instance == null) {
       instance = new AirportDaoImpl();
@@ -198,7 +157,7 @@ public class AirportDaoImpl implements AirportDao {
   @Override
   public boolean delete(Integer id) throws DaoException {
     try (Connection connection = ConnectionManager.getConnection();
-         PreparedStatement stmt = connection.prepareStatement(DELETE_AIRPORT_BY_ID_SQL)) {
+         PreparedStatement stmt = connection.prepareStatement(DELETE_SQL)) {
 
       stmt.setInt(1, id);
       int affectedRows = stmt.executeUpdate();
@@ -267,20 +226,16 @@ public class AirportDaoImpl implements AirportDao {
     }
   }
 
-  private Airport mapRowToAirport(ResultSet rs) throws DaoException {
-    try {
-      return Airport.builder()
-          .airportId(rs.getInt("airport_id"))
-          .name(rs.getString("name"))
-          .city(rs.getString("city"))
-          .country(rs.getString("country"))
-          .iataCode(rs.getString("iata_code"))
-          .icaoCode(rs.getString("icao_code"))
-          .timezone(rs.getString("timezone"))
-          .build();
-    } catch (SQLException e) {
-      throw new DaoException("Failed to map result set to Airport entity", e);
-    }
+  private Airport mapRowToAirport(ResultSet rs) throws SQLException {
+    return Airport.builder()
+        .airportId(rs.getInt(Columns.AIRPORT_ID))
+        .name(rs.getString(Columns.NAME))
+        .city(rs.getString(Columns.CITY))
+        .country(rs.getString(Columns.COUNTRY))
+        .iataCode(rs.getString(Columns.IATA_CODE))
+        .icaoCode(rs.getString(Columns.ICAO_CODE))
+        .timezone(rs.getString(Columns.TIMEZONE))
+        .build();
   }
 
   private void setAirportParameters(PreparedStatement stmt, Airport airport) throws DaoException {
@@ -296,6 +251,18 @@ public class AirportDaoImpl implements AirportDao {
     }
 
   }
+
+  // Column name constants
+  private static final class Columns {
+    static final String AIRPORT_ID = "airport_id";
+    static final String NAME = "name";
+    static final String CITY = "city";
+    static final String COUNTRY = "country";
+    static final String IATA_CODE = "iata_code";
+    static final String ICAO_CODE = "icao_code";
+    static final String TIMEZONE = "timezone";
+  }
+
 }
 
 

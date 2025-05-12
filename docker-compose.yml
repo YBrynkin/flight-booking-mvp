@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:15
@@ -18,6 +20,20 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - flight_network
+
+  tomcat:
+    image: tomcat:10.1-jdk21
+    container_name: flight_booking_tomcat
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./target/flight-booking.war:/usr/local/tomcat/webapps/flight-booking.war
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - flight_network
 

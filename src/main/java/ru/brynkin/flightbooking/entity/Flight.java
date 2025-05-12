@@ -12,6 +12,7 @@ import ru.brynkin.flightbooking.enums.FlightStatus;
  * Entity class for flights table
  */
 
+
 @Data
 @Builder
 @NoArgsConstructor

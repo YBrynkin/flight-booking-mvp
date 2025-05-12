@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 /**
  * Enitty class for arilines table
  */
+
+
 @Data
 @Builder
 @NoArgsConstructor

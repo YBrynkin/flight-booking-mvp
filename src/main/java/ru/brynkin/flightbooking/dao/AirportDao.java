@@ -6,7 +6,14 @@ import ru.brynkin.flightbooking.entity.Airport;
 import ru.brynkin.flightbooking.exception.DaoException;
 
 /**
- * Intraface for Airport's DAO class
+ * Data Access Object interface for {@link Airport} entities.
+ * Provides CRUD operations and additional methods for querying airports by various criteria.
+ *
+ * <p>Extends {@link BaseDao} with {@code Integer} as the key type and {@code Airport} as the entity type.</p>
+ *
+ * @see Airport
+ * @see BaseDao
+ * @see DaoException
  */
 
 public interface AirportDao extends BaseDao<Integer, Airport> {

@@ -11,6 +11,7 @@ import ru.brynkin.flightbooking.exception.DaoException;
  * @param <K> Primary key type
  */
 public interface BaseDao<K, T> {
+
   Optional<T> findById(K key) throws DaoException;
 
   List<T> findAll() throws DaoException;

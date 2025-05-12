@@ -11,6 +11,8 @@ import lombok.ToString;
 /**
  * Entity class for airports table
  */
+
+
 @Getter
 @Setter
 @Builder
